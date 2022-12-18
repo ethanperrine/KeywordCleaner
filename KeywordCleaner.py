@@ -11,14 +11,20 @@ class Cleaner:
     # 8. replaces - and _ with a space
     # 9. removes lines made up of purely numbers
     # 10. sorts lines from smallest to largest
+    # 11. removes lines that are less than 1 word long
+    # 12. removes lines that are longer than 3 words
+    # 13. removes words that are in the bad word list.
+    # 14. Looks for a string of characters that is at least 1 character long and can be up to 20 characters in length
 
     def setup(self):
         # imports
         import easygui
         from functools import partial
+        import regex
 
         global easygui
         global partial
+        global regex
 
     def clean(self):
         file_path = easygui.fileopenbox()
@@ -26,7 +32,7 @@ class Cleaner:
         output = []
         blacklisted = ["#", "+", "*", "?", '"', "/", "&", "|", "(", ")", "{", "}", "[", "]", ".", ",", "$", "%", "^", "@", "!", "<", ">", ";", ":"] # +* ?"/&|(){}[].,$#%^@!<>;:
 
-        utf8open = partial(open, encoding="UTF-8")
+        utf8open = partial(open, encoding="UTF-8", errors="ignore")
 
         with utf8open("keyword_output.txt", "w") as output_file:
             with utf8open(file_path, "r") as input_file:
@@ -47,13 +53,9 @@ class Cleaner:
 
                     line = line.replace("\\", "")
 
-                    line = line.replace("  ", " ")
+                    line = regex.match(r"^(.{1,20}\s?){1,}$", line).group(0)
 
-                    line = line.replace("   ", " ")
-
-                    line = line.replace("    ", " ")
-
-                    line = line.replace("     ", " ")
+                    line = regex.sub(r"\s+", " ", line)
 
                     for char in blacklisted:
                         line = line.replace(char, "")
@@ -64,8 +66,11 @@ class Cleaner:
 
                 output.sort(key=len)
 
+                bad_words = ["http", "www", "com", "002"]
                 for line in output:
-                    output_file.write(line + "\n")
+                    if not any(bad_word in line for bad_word in bad_words):
+                        if line.count(" ") > 1 and line.count(" ") < 5:
+                            output_file.write(line + "\n")
 
 
     def __init__(self):
